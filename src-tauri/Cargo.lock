@@ -4397,7 +4397,7 @@ dependencies = [
 
 [[package]]
 name = "nexora"
-version = "1.9.22"
+version = "1.9.23"
 dependencies = [
  "arboard",
  "serde_json",

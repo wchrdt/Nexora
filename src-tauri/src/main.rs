@@ -1191,9 +1191,11 @@ fn start_threads(app: AppHandle, st: Arc<AppState>) {
             }
             let want = st.capture.load(Ordering::Relaxed) || geo;
             tick = tick.wrapping_add(1);
-            /* раз в секунду принудительно выставляем состояние: place_window/shot_layout трогают его напрямую,
-               и кэш last мог разойтись с реальностью (после скриншота окно оставалось «глухим» к кликам) */
-            if want != last || tick % 20 == 0 {
+            /* раз в секунду принудительно выставляем состояние, но только пока окно должно ловить мышь:
+               place_window/shot_layout трогают его напрямую, и кэш last мог разойтись с реальностью (после скриншота окно
+               оставалось «глухим» к кликам). Когда мышь не над островом, ничего не трогаем: перезапись стиля окна
+               каждую секунду давала ритмичное мигание свёрнутого острова на части систем */
+            if want != last || (want && tick % 20 == 0) {
                 let _ = win.set_ignore_cursor_events(!want);
                 last = want;
             }
@@ -1207,7 +1209,9 @@ fn place_window(app: &AppHandle) {
         let pos = mon.position();
         let size = mon.size();
         let sf = mon.scale_factor();
-        let h = ((820.0 * sf) as u32).min(size.height);
+        /* на 4 пикселя ниже высоты монитора: окно, закрывающее экран целиком, Windows считает полноэкранным приложением
+           (остров прятался и снова появлялся по кругу), а так не считает */
+        let h = ((820.0 * sf) as u32).min(size.height.saturating_sub(4));
         let _ = win.set_position(PhysicalPosition::new(pos.x, pos.y));
         let _ = win.set_size(PhysicalSize::new(size.width, h));
     }
