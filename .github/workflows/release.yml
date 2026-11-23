@@ -40,7 +40,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          projectPath: .
+          projectPath: src-tauri
           tauriScript: cargo tauri
           tagName: v__VERSION__
           releaseName: 'Nexora v__VERSION__'
