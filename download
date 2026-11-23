@@ -1,0 +1,8 @@
+# сборка и зависимости
+src-tauri/target/
+node_modules/
+build_log.txt
+
+# приватный ключ подписи обновлений НИКОГДА не коммитить
+*.key
+nexora-updater.key
