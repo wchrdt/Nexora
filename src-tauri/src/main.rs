@@ -904,6 +904,24 @@ fn fullscreen_busy() -> bool {
     extern "system" {
         fn SHQueryUserNotificationState(pquns: *mut i32) -> i32;
     }
+    #[link(name = "user32")]
+    extern "system" {
+        fn GetForegroundWindow() -> isize;
+        fn GetWindowThreadProcessId(hwnd: isize, pid: *mut u32) -> u32;
+    }
+    /* Окно острова растянуто на всю ширину экрана, а на небольшом экране или при масштабе 125-150% ещё и на всю высоту.
+       Когда оно на переднем плане, Windows считает его «полноэкранным приложением» (QUNS_BUSY), остров прятал сам себя,
+       потом показывал, и так по кругу: постоянное мигание. Если на переднем плане наше окно, это не игра. */
+    unsafe {
+        let fg = GetForegroundWindow();
+        if fg != 0 {
+            let mut pid: u32 = 0;
+            GetWindowThreadProcessId(fg, &mut pid);
+            if pid == std::process::id() {
+                return false;
+            }
+        }
+    }
     let mut s: i32 = 5;
     let hr = unsafe { SHQueryUserNotificationState(&mut s) };
     hr == 0 && (s == 2 || s == 3 || s == 4)
@@ -920,19 +938,24 @@ fn start_threads(app: AppHandle, st: Arc<AppState>) {
     /* остров прячется, пока на экране игра или другое полноэкранное приложение, и возвращается после */
     {
         let (app, st) = (app.clone(), st.clone());
-        thread::spawn(move || loop {
-            thread::sleep(Duration::from_millis(700));
-            let fs = !st.capture.load(Ordering::Relaxed) && fullscreen_busy();
-            st.in_fs.store(fs, Ordering::Relaxed);
-            let Some(w) = app.get_webview_window("main") else { continue };
-            if !fs {
-                st.fs_override.store(false, Ordering::Relaxed);
-                if st.game_hidden.swap(false, Ordering::Relaxed) && !st.user_hidden.load(Ordering::Relaxed) {
-                    let _ = w.show();
+        thread::spawn(move || {
+            /* прячем остров, только если полноэкранность держится минимум два опроса подряд (~1,4 с): короткие скачки не мигают */
+            let mut fs_ticks: u32 = 0;
+            loop {
+                thread::sleep(Duration::from_millis(700));
+                let fs = !st.capture.load(Ordering::Relaxed) && fullscreen_busy();
+                fs_ticks = if fs { fs_ticks.saturating_add(1) } else { 0 };
+                st.in_fs.store(fs, Ordering::Relaxed);
+                let Some(w) = app.get_webview_window("main") else { continue };
+                if !fs {
+                    st.fs_override.store(false, Ordering::Relaxed);
+                    if st.game_hidden.swap(false, Ordering::Relaxed) && !st.user_hidden.load(Ordering::Relaxed) {
+                        let _ = w.show();
+                    }
+                } else if fs_ticks >= 2 && st.auto_hide.load(Ordering::Relaxed) && !st.fs_override.load(Ordering::Relaxed) && w.is_visible().unwrap_or(false) {
+                    st.game_hidden.store(true, Ordering::Relaxed);
+                    let _ = w.hide();
                 }
-            } else if st.auto_hide.load(Ordering::Relaxed) && !st.fs_override.load(Ordering::Relaxed) && w.is_visible().unwrap_or(false) {
-                st.game_hidden.store(true, Ordering::Relaxed);
-                let _ = w.hide();
             }
         });
     }
