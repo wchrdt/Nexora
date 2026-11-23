@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,6 +23,17 @@ jobs:
       - name: Установка tauri-cli
         run: cargo install tauri-cli --version "^2" --locked
 
+      - name: Скачать Xray для VPN
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path xray | Out-Null
+          Invoke-WebRequest -Uri "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-windows-64.zip" -OutFile xray.zip
+          Expand-Archive -Path xray.zip -DestinationPath xray-tmp -Force
+          Copy-Item xray-tmp/xray.exe xray/xray.exe -Force
+          Copy-Item xray-tmp/geoip.dat xray/geoip.dat -Force
+          Copy-Item xray-tmp/geosite.dat xray/geosite.dat -Force
+          Get-ChildItem xray
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -30,8 +42,8 @@ jobs:
         with:
           projectPath: .
           tauriScript: cargo tauri
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Nexora ${{ github.ref_name }}'
+          tagName: v__VERSION__
+          releaseName: 'Nexora v__VERSION__'
           releaseBody: 'Установщик Nexora. Приложение обновляется кнопкой в настройках.'
           releaseDraft: false
           prerelease: false
