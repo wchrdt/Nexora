@@ -1,6 +1,6 @@
 [package]
 name = "nexora"
-version = "1.9.23"
+version = "1.9.24"
 description = "Nexora"
 edition = "2021"
 

@@ -248,6 +248,20 @@ pub fn launch(target: String) -> bool {
     }
     #[cfg(windows)]
     {
+        /* Nexora работает от имени администратора, и всё, что запускает ShellExecute, наследует эти права.
+           Окно с повышенными правами не принимает файлы, перетащенные из обычного проводника (защита UIPI):
+           в FL Studio и Telegram нельзя было перенести mp3. Поэтому программы, папки и файлы открываем через
+           explorer.exe: он работает без повышения прав и запускает цель от имени обычного пользователя. */
+        if !is_web {
+            let mut c = Command::new("explorer.exe");
+            c.arg(t).creation_flags(CREATE_NO_WINDOW);
+            if let Ok(mut child) = c.spawn() {
+                thread::spawn(move || {
+                    let _ = child.wait();
+                });
+                return true;
+            }
+        }
         let wide = |s: &str| -> Vec<u16> { s.encode_utf16().chain(std::iter::once(0)).collect() };
         let op = wide("open");
         let file = wide(t);
