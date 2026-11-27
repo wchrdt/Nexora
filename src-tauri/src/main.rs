@@ -24,6 +24,7 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const AUDIO_PS: &str = include_str!("../scripts/audio.ps1");
 const MEDIA_PS: &str = include_str!("../scripts/media.ps1");
 const LEVELS_PS: &str = include_str!("../scripts/levels.ps1");
+const NOTIF_PS: &str = include_str!("../scripts/notif.ps1");
 const RUN_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
 const THEME_KEY: &str = r"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize";
 
@@ -156,6 +157,7 @@ impl PsWorker {
 struct AppState {
     audio: PsWorker,
     media: PsWorker,
+    notif: PsWorker, /* уведомления Windows (Discord-звонки, Telegram): читает notif.ps1 */
     mctl: PsWorker, /* отдельный процесс для команд play/next/prev: опрос состояния не задерживает кнопки */
     ui_active: AtomicBool,
     sticky: AtomicBool, /* остров «залип» раскрытым (список приложений с интернетом): снимается кликом в другом месте */
@@ -593,6 +595,83 @@ fn autostart_set(v: bool) -> bool {
         /* успех, только если автозапуска действительно не осталось */
         !autostart_get()
     }
+}
+
+
+/* ---------- уведомления Windows: звонки Discord и сообщения Telegram на острове ---------- */
+#[tauri::command]
+async fn notif_poll(state: St<'_>) -> Result<Value, String> {
+    let s = state.inner().clone();
+    let r = tauri::async_runtime::spawn_blocking(move || s.notif.request("poll", Duration::from_secs(12)))
+        .await
+        .unwrap_or(None);
+    Ok(match r {
+        Some(l) => serde_json::from_str::<Value>(&l)
+            .unwrap_or_else(|_| json!({ "st": "error", "err": "непонятный ответ службы уведомлений", "new": [], "gone": [] })),
+        None => json!({ "st": "error", "err": "служба уведомлений не ответила", "new": [], "gone": [] }),
+    })
+}
+
+/* what: "accept" (принять звонок) или "decline" (сбросить) */
+#[tauri::command]
+async fn notif_discord(state: St<'_>, what: String) -> Result<bool, String> {
+    let w = if what == "accept" { "accept" } else { "decline" };
+    let s = state.inner().clone();
+    let cmd = format!("discord {}", w);
+    let r = tauri::async_runtime::spawn_blocking(move || s.notif.request(&cmd, Duration::from_secs(15)))
+        .await
+        .unwrap_or(None);
+    Ok(r.map(|l| l.trim().eq_ignore_ascii_case("discord ok")).unwrap_or(false))
+}
+
+/* ---------- резервная копия заметок в файл (%APPDATA%\Nexora\notes.json) ----------
+   localStorage у WebView2 пишется на диск с задержкой и теряется, если приложение закрыли принудительно или выключили ПК,
+   поэтому заметки дублируются в обычный файл (запись через временный файл, чтобы не получить обрезанный JSON). */
+#[tauri::command]
+fn state_save(json: String) -> bool {
+    let dir = extras::data_dir();
+    if std::fs::create_dir_all(&dir).is_err() {
+        return false;
+    }
+    let tmp = dir.join("notes.json.tmp");
+    let dst = dir.join("notes.json");
+    if std::fs::write(&tmp, json.as_bytes()).is_err() {
+        return false;
+    }
+    std::fs::rename(&tmp, &dst).is_ok()
+}
+
+#[tauri::command]
+fn state_load() -> String {
+    std::fs::read_to_string(extras::data_dir().join("notes.json")).unwrap_or_default()
+}
+
+/* ---------- удаление Nexora: запускаем штатный деинсталлятор NSIS и закрываемся ---------- */
+#[tauri::command]
+fn uninstall_app(app: AppHandle) -> Result<bool, String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let dir = exe.parent().ok_or("не нашёл папку приложения")?.to_path_buf();
+    let un = ["uninstall.exe", "Uninstall.exe", "unins000.exe"]
+        .iter()
+        .map(|n| dir.join(n))
+        .find(|p| p.exists())
+        .ok_or("Деинсталлятор не найден: приложение запущено не из установленной копии. Удали Nexora через «Параметры → Приложения».")?;
+    /* убираем автозапуск и всё, что мы запускали (zapret, Xray, прокси Telegram, системный прокси) */
+    let mut cmd = Command::new("schtasks");
+    cmd.args(["/Delete", "/TN", "Nexora", "/F"]);
+    quiet(&mut cmd);
+    let _ = cmd.output();
+    autostart_old_key(true);
+    extras::shutdown();
+    let mut u = Command::new(&un);
+    u.current_dir(&dir);
+    u.spawn().map_err(|e| format!("не удалось запустить деинсталлятор: {}", e))?;
+    /* даём деинсталлятору появиться и закрываемся, чтобы он смог удалить файлы */
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(900));
+        app.exit(0);
+    });
+    Ok(true)
 }
 
 #[tauri::command]
@@ -1266,6 +1345,7 @@ fn main() {
         audio: PsWorker::new("audio", AUDIO_PS),
         media: PsWorker::new("media", MEDIA_PS),
         mctl: PsWorker::new("mediactl", MEDIA_PS),
+        notif: PsWorker::new("notif", NOTIF_PS),
         ui_active: AtomicBool::new(false),
         sticky: AtomicBool::new(false),
         capture: AtomicBool::new(false),
@@ -1301,6 +1381,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             sys, ui_active, ui_sticky, hit, set_rect, media_key, media_state, media_seek, media_cover, vol_get, vol_set,
             vol_mute, clip_read, clip_write, open, power, theme_windows, minimize_all, autostart_get, autostart_set, quit,
+            notif_poll, notif_discord, state_save, state_load, uninstall_app,
             hide_window, auto_hide_set, mouse_pause, hk_set, clip_mark_image, shot_layout, extras::ps_run, extras::run_cmd, extras::launch,
             extras::tcp_ping, extras::xray_find, extras::xray_start, extras::xray_stop, extras::xray_state,
             extras::bp_info, extras::bp_read, extras::bp_start, extras::bp_stop, extras::bp_state,
@@ -1346,6 +1427,7 @@ fn main() {
             state.audio.stop();
             state.media.stop();
             state.mctl.stop();
+            state.notif.stop();
             extras::shutdown();
         }
     });

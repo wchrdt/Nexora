@@ -857,6 +857,14 @@ return (Date.now()-window.__t0>9000)?JSON.stringify({d:''}):'';
     autostartSet: v => inv('autostart_set', { v: !!v }),
 
     quit: () => { inv('quit'); },
+    /* резервная копия заметок в файл (переживает принудительное закрытие и выключение ПК) */
+    stateSave: json => inv('state_save', { json: String(json || '') }),
+    stateLoad: async () => { const r = await inv('state_load'); return typeof r === 'string' ? r : ''; },
+    /* удаление приложения штатным деинсталлятором */
+    uninstall: () => T.core.invoke('uninstall_app').then(() => ({ ok: true })).catch(e => ({ ok: false, err: String((e && e.message) || e) })),
+    /* уведомления Windows: звонки Discord и сообщения Telegram */
+    notifPoll: () => inv('notif_poll'),
+    notifDiscord: what => inv('notif_discord', { what: what === 'accept' ? 'accept' : 'decline' }),
     hide: () => { inv('hide_window'); },
 
     onToggle: fn => on('island:toggle', fn),

@@ -129,6 +129,22 @@ html[data-season] .island{background-image:var(--season-grad,none)}
 .pa-actions{display:flex;gap:6px}
 .pa-btn{padding:6px 11px;border-radius:9px;background:var(--card2);font-size:12px}
 .pa-btn.ok{background:var(--text);color:var(--bg)}
+/* входящий звонок Discord на свёрнутом острове: красная и зелёная кнопки, как на телефоне */
+.pill-call{display:none;align-items:center;gap:12px;width:100%}
+.island.call .pill-call{display:flex}
+.island.call .pill-alert{display:none}
+.call-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#5865f2;color:#fff;font-size:20px;flex:none;animation:callring 1.1s ease-in-out infinite}
+@keyframes callring{0%,100%{transform:rotate(0)}15%{transform:rotate(-14deg)}30%{transform:rotate(12deg)}45%{transform:rotate(-8deg)}60%{transform:rotate(0)}}
+.call-text{flex:1;min-width:0}
+.call-text b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.call-text span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.call-btn{width:48px;height:48px;border-radius:50%;border:0;display:grid;place-items:center;color:#fff;cursor:pointer;flex:none;transition:transform .15s,filter .15s}
+.call-btn:hover{transform:scale(1.08);filter:brightness(1.1)}
+.call-btn:active{transform:scale(.94)}
+.call-btn svg{width:22px;height:22px;fill:currentColor}
+.call-btn.acc{background:#2ecc71}
+.call-btn.dec{background:#ff3b30}
+.call-btn.dec svg{transform:rotate(135deg)}
 
 /* панель */
 .panel{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transform:scale(1.02);transition:opacity .25s .06s,transform .35s var(--ease)}
@@ -576,6 +592,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;b
         <div class="pill-center"><span id="pillTime">14:43</span><span class="pill-timer" id="pillTimer"></span><span class="w" id="pillWeather">☀️ 18°</span><div class="pill-music" id="pillMusic"><span class="pm-art" id="pillArt">♪</span><div class="pm-col"><div class="pm-marq" id="pillMarq"><div class="pm-run"></div></div><div class="pm-marq pm-ly" id="pillLyMarq"><div class="pm-run"></div></div></div></div></div>
       </div>
       <div class="pill-line" id="pillLine"></div>
+      <div class="pill-call">
+        <div class="call-av">📞</div>
+        <div class="call-text"><b id="callName">Discord</b><span id="callSub">Входящий звонок</span></div>
+        <button class="call-btn dec" id="callDecline" title="Сбросить"><svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg></button>
+        <button class="call-btn acc" id="callAccept" title="Принять"><svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg></button>
+      </div>
       <div class="pill-alert">
         <div class="pa-ico" id="alertIco">⏱</div>
         <div class="pa-text"><b id="alertTitle">Время вышло</b><span id="alertSub">Таймер · 5 мин</span></div>
@@ -914,6 +936,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;b
           <div class="card" style="margin-top:10px" id="bpCard">
             <h3>Обход блокировок <span class="sp"></span><div class="switch" id="swBp"></div></h3>
             <div class="muted" style="margin-top:4px">Один переключатель: Discord · YouTube · SoundCloud (zapret) и прокси для Telegram. Нужны права администратора. Не включай вместе с VPN.</div>
+            <div class="row" style="margin-top:8px;gap:8px"><span style="flex:1;font-size:12px">Запускать вместе с Nexora (обход + Telegram-прокси)</span><div class="switch" id="swBpAuto"></div></div>
             <div class="row" style="margin-top:8px;gap:6px">
               <select class="inp" id="bpStrat" style="flex:1"></select>
               <button class="btn sm" id="bpPick">Подобрать</button>
@@ -951,6 +974,8 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;b
               <div class="setting"><label>Не сворачивать</label><div class="switch" id="swPin"></div></div>
               <div class="setting"><label>Показывать продюсера трека</label><div class="switch on" id="swProd"></div></div>
               <div class="setting"><label>Текст песни на острове (вторая строка, остров шире)</label><div class="switch on" id="swPillLy"></div></div>
+              <div class="setting"><label>Звонки Discord и сообщения Telegram на острове (не показываются, пока на острове идёт текст песни)</label><div class="switch on" id="swNotif"></div></div>
+              <div class="srv-info" id="nfInfo"></div>
               <div class="hr"></div>
               <h3 style="margin-top:4px">Свой звук при открытии</h3>
               <div class="muted" id="openSndName">Стандартный звук</div>
@@ -997,6 +1022,9 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;b
                 <button class="btn sm pri" id="appUpd">Проверить обновления</button>
               </div>
               <div class="srv-info" id="appUpdInfo"></div>
+              <div class="row" style="margin-top:6px;gap:6px">
+                <button class="btn sm red" id="appUninstall">Удалить Nexora</button>
+              </div>
               <div class="hr"></div>
               <button class="btn sm red" id="wipe">Стереть данные</button>
               <button class="btn sm" id="hideApp" style="margin-left:6px">Скрыть</button>
@@ -1093,7 +1121,17 @@ const S = {
 };
 
 const LS='myisland.v2';
+/* Заметки дублируются в файл %APPDATA%\Nexora\notes.json: localStorage у WebView2 пишется на диск с задержкой
+   и терялся при закрытии приложения/выключении ПК. */
+let nbTimer=null;
+function nbFlush(){
+  clearTimeout(nbTimer);
+  if(!API||!API.stateSave)return Promise.resolve(false);
+  try{return Promise.resolve(API.stateSave(JSON.stringify({at:S.notesAt||0,notes:S.notes,reminders:S.reminders}))).catch(()=>false);}catch(e){return Promise.resolve(false);}
+}
+function nbSoon(){clearTimeout(nbTimer);nbTimer=setTimeout(nbFlush,300);}
 function save(){
+  nbSoon();
   /* save() не должен бросать исключения: раньше при переполнении localStorage (картинки из буфера по несколько МБ)
      он обрывал вызывающий код (например, включение обхода блокировок после запуска winws). */
   const build=lim=>{
@@ -1104,7 +1142,7 @@ function save(){
       return Object.assign({},c,{dataUrl:''});
     });
     return JSON.stringify({
-      cfg:{season:S.season,pillLy:S.pillLy,bgOp:S.bgOp,accent:S.accent,theme:S.theme,character:S.character,w:S.w,h:S.h,pillW:S.pillW,top:S.top,scale:S.scale,opacity:S.opacity,blur:S.blur,speed:S.speed,pinned:S.pinned,sound:S.sound,liquid:S.liquid,showProd:S.showProd,mvol:S.mvol,mvolTouched:S.mvolTouched,openSoundName:S.openSoundName||'',openSoundVol:S.openSoundVol,hotkeys:S.hotkeys||null,happPath:S.happPath||'',subUrl:S.subUrl||'',servers:(S.servers||[]).slice(0,300),srvSel:S.srvSel||'',subInfo:S.subInfo||''},
+      cfg:{notesAt:S.notesAt||0,nfOn:S.nfOn,season:S.season,pillLy:S.pillLy,bgOp:S.bgOp,accent:S.accent,theme:S.theme,character:S.character,w:S.w,h:S.h,pillW:S.pillW,top:S.top,scale:S.scale,opacity:S.opacity,blur:S.blur,speed:S.speed,pinned:S.pinned,sound:S.sound,liquid:S.liquid,showProd:S.showProd,mvol:S.mvol,mvolTouched:S.mvolTouched,openSoundName:S.openSoundName||'',openSoundVol:S.openSoundVol,hotkeys:S.hotkeys||null,happPath:S.happPath||'',subUrl:S.subUrl||'',servers:(S.servers||[]).slice(0,300),srvSel:S.srvSel||'',subInfo:S.subInfo||''},
       clips, tiles:S.tiles, notes:S.notes, reminders:S.reminders,
       ai:S.ai.slice(-50), anthropicKey:S.anthropicKey, qwenKey:S.qwenKey, tgToken:S.tg.token, apps:S.apps, bp:S.bp, ah:S.autoHide
     });
@@ -1134,6 +1172,7 @@ function load(){
 load();
 if(S.showProd===undefined)S.showProd=true;if(S.openSoundVol===undefined)S.openSoundVol=.7;
 if(S.season===undefined)S.season='off';if(S.pillLy===undefined)S.pillLy=true;if(S.bgOp===undefined)S.bgOp=.35;
+if(S.nfOn===undefined)S.nfOn=true;
 S.noteId=S.notes[0]?.id||null;
 
 /* ---------- звук ---------- */
@@ -1211,6 +1250,7 @@ setInterval(()=>{
   if(Date.now()-musicOutSince>=MUSIC_HOLD_MS){musicHold=false;musicOutSince=0;setSticky(false);if(canAutoCollapse())collapse();}
 },1000);
 function expand(tab){
+  if(NF&&NF.call)nfEndCall();   /* клик по острову во время звонка: плашка звонка убирается */
   if(tab)setTab(tab);
   S.expanded=true;expandedAt=Date.now();island.classList.add('expanded');island.classList.remove('alert');
   Sound.play('open');hit(true);
@@ -2918,16 +2958,48 @@ $('#tgSend').onclick=async()=>{
 function renderNotes(){
   const n=S.notes.find(x=>x.id===S.noteId)||S.notes[0];
   $('#noteTabs').innerHTML=S.notes.map(x=>`<button class="note-tab ${x.id===S.noteId?'on':''}" data-note="${x.id}">${esc(x.title||'Без названия')}</button>`).join('');
-  if(n){$('#noteTitle').value=n.title;$('#noteBody').value=n.body;}
+  if(n){S.noteId=n.id;$('#noteTitle').value=n.title;$('#noteBody').value=n.body;}
+  else{$('#noteTitle').value='';$('#noteBody').value='';}
   $('#remList').innerHTML=S.reminders.map(r=>`<div class="row" style="padding:5px 0"><span style="flex:1;font-size:12px">${esc(r.text)}</span><button class="btn sm red" data-remdel="${r.id}">✕</button></div>`).join('');
   renderTimer();
 }
 $('#noteTabs').onclick=e=>{const b=e.target.closest('[data-note]');if(b){S.noteId=b.dataset.note;renderNotes();}};
-$('#noteSave').onclick=()=>{const n=S.notes.find(x=>x.id===S.noteId);if(n){n.title=$('#noteTitle').value;n.body=$('#noteBody').value;n.at=Date.now();renderNotes();save();toast('Сохранено');}};
-$('#noteAdd').onclick=()=>{const n={id:uid(),title:'Новая заметка',body:'',at:Date.now()};S.notes.unshift(n);S.noteId=n.id;renderNotes();save();};
-$('#noteDelete').onclick=()=>{const i=S.notes.findIndex(x=>x.id===S.noteId);if(i<0)return;const [n]=S.notes.splice(i,1);S.noteId=S.notes[0]?.id||null;renderNotes();save();toast('Удалено',{label:'Вернуть',fn:()=>{S.notes.splice(i,0,n);S.noteId=n.id;renderNotes();save();}});};
-$('#remAdd').onclick=()=>{const t=$('#remText').value.trim();if(!t)return;S.reminders.push({id:uid(),text:t,at:Date.now()+3600000});$('#remText').value='';renderNotes();save();};
-$('#remList').onclick=e=>{const b=e.target.closest('[data-remdel]');if(b){S.reminders=S.reminders.filter(r=>r.id!==b.dataset.remdel);renderNotes();save();}};
+/* автосохранение: каждая буква сразу попадает в состояние, на диск (localStorage + файл) уходит через ~0,3 с */
+let noteTimer=null;
+function noteInput(){
+  let n=S.notes.find(x=>x.id===S.noteId);
+  const t=$('#noteTitle').value,b=$('#noteBody').value;
+  if(!n){
+    if(!t&&!b)return;
+    n={id:uid(),title:t,body:b,at:Date.now()};S.notes.unshift(n);S.noteId=n.id;renderNotes();
+  }else{
+    n.title=t;n.body=b;n.at=Date.now();
+    const tb=$('#noteTabs [data-note="'+n.id+'"]');if(tb)tb.textContent=t||'Без названия';
+  }
+  S.notesAt=Date.now();
+  clearTimeout(noteTimer);noteTimer=setTimeout(()=>{save();nbFlush();},300);
+}
+$('#noteTitle').addEventListener('input',noteInput);
+$('#noteBody').addEventListener('input',noteInput);
+function flushAll(){clearTimeout(noteTimer);try{save();}catch(e){}return nbFlush();}
+window.addEventListener('pagehide',flushAll);
+window.addEventListener('beforeunload',flushAll);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushAll();});
+$('#noteSave').onclick=()=>{const n=S.notes.find(x=>x.id===S.noteId);if(n){n.title=$('#noteTitle').value;n.body=$('#noteBody').value;n.at=Date.now();S.notesAt=n.at;renderNotes();save();nbFlush();toast('Сохранено');}};
+$('#noteAdd').onclick=()=>{const n={id:uid(),title:'Новая заметка',body:'',at:Date.now()};S.notes.unshift(n);S.noteId=n.id;S.notesAt=Date.now();renderNotes();save();};
+$('#noteDelete').onclick=()=>{const i=S.notes.findIndex(x=>x.id===S.noteId);if(i<0)return;const [n]=S.notes.splice(i,1);S.noteId=S.notes[0]?.id||null;S.notesAt=Date.now();renderNotes();save();toast('Удалено',{label:'Вернуть',fn:()=>{S.notes.splice(i,0,n);S.noteId=n.id;S.notesAt=Date.now();renderNotes();save();}});};
+$('#remAdd').onclick=()=>{const t=$('#remText').value.trim();if(!t)return;S.reminders.push({id:uid(),text:t,at:Date.now()+3600000});$('#remText').value='';S.notesAt=Date.now();renderNotes();save();};
+$('#remList').onclick=e=>{const b=e.target.closest('[data-remdel]');if(b){S.reminders=S.reminders.filter(r=>r.id!==b.dataset.remdel);S.notesAt=Date.now();renderNotes();save();}};
+/* при запуске сверяем localStorage с файловой копией: берём более свежую */
+async function notesHydrate(){
+  if(!API||!API.stateLoad)return;
+  let d=null;
+  try{const t=await API.stateLoad();d=t?JSON.parse(t):null;}catch(e){d=null;}
+  if(d&&Array.isArray(d.notes)&&(+d.at||0)>(+S.notesAt||0)){
+    S.notes=d.notes;if(Array.isArray(d.reminders))S.reminders=d.reminders;S.notesAt=+d.at;
+    S.noteId=S.notes[0]?.id||null;renderNotes();save();
+  }else nbFlush();
+}
 function renderTimer(){
   const p=S.timer.total?S.timer.left/S.timer.total:0,C=2*Math.PI*46;
   $('#timerFg').setAttribute('stroke-dasharray',C);$('#timerFg').setAttribute('stroke-dashoffset',C*(1-p));
@@ -3281,6 +3353,8 @@ function renderSettings(){
   $('#swSound').classList.toggle('on',S.sound);$('#swLiquid').classList.toggle('on',S.liquid);$('#swPin').classList.toggle('on',S.pinned);
   $('#swProd').classList.toggle('on',!!S.showProd);$('#swAutoHide').classList.toggle('on',!!S.autoHide);renderHK();renderOpenSnd();
   $('#swPillLy').classList.toggle('on',S.pillLy!==false);
+  $('#swNotif').classList.toggle('on',S.nfOn!==false);
+  if(typeof renderNfInfo==='function')renderNfInfo();
   document.querySelectorAll('#seasonBtns [data-season]').forEach(b=>b.classList.toggle('on',b.dataset.season===S.season));
   $('#bgOp').value=S.bgOp;$('#bgOpOut').textContent=(+S.bgOp).toFixed(2);
 }
@@ -3306,6 +3380,7 @@ $('#bgFile').onchange=e=>{
   fr.readAsDataURL(f);
 };
 $('#bgOp').oninput=e=>{S.bgOp=+e.target.value;applyCfg();$('#bgOpOut').textContent=S.bgOp.toFixed(2);save();};
+$('#swNotif').onclick=()=>{S.nfOn=S.nfOn===false;if(S.nfOn===false&&NF.call)nfEndCall();renderSettings();save();if(S.nfOn)nfKick();};
 $('#swPillLy').onclick=()=>{S.pillLy=!S.pillLy;pillLyText='';updatePill();renderSettings();save();};
 $('#ctrlMinAll').onclick=async()=>{
   if(!API||!API.minimizeAll){toast('Доступно только в приложении');return;}
@@ -3315,7 +3390,7 @@ $('#swPin').onclick=()=>{S.pinned=!S.pinned;renderSettings();save();};
 $('#swAutostart').onclick=async()=>{if(!API)return;const v=await API.autostartGet();await API.autostartSet(!v);$('#swAutostart').classList.toggle('on',!v);};
 $('#wipe').onclick=()=>{if(confirm('Стереть все данные острова?')){localStorage.removeItem(LS);location.reload();}};
 $('#hideApp').onclick=()=>API?API.hide():collapse();
-$('#quitApp').onclick=()=>API?API.quit():toast('Выход — в приложении');
+$('#quitApp').onclick=async()=>{if(!API)return toast('Выход — в приложении');try{await flushAll();}catch(e){}API.quit();};
 
 /* ---------- ввод текста (prompt() в Electron не работает) ---------- */
 function askText(title,def=''){
@@ -3490,8 +3565,9 @@ async function scanQR(){
 
 /* ---------- алерт ---------- */
 let alertTimer=null,alertAgainFn=null;
+var NF={st:'',err:'',call:null,ring:null,tmo:null,busy:false,loop:false};
 function showAlert(ico,title,sub,again,againLabel){
-  if(isTyping()){toast(title+(sub?': '+sub:''));return;}
+  if(isTyping()||NF.call){toast(title+(sub?': '+sub:''));return;}
   $('#alertIco').textContent=ico;$('#alertTitle').textContent=title;$('#alertSub').textContent=sub;
   alertAgainFn=again||null;$('#alertAgain').textContent=againLabel||'Ещё раз';$('#alertAgain').style.display=again?'block':'none';
   island.classList.remove('expanded');island.classList.add('alert');S.expanded=false;if(API&&API.active)API.active(false);
@@ -3499,6 +3575,85 @@ function showAlert(ico,title,sub,again,againLabel){
 }
 $('#alertOk').onclick=()=>{clearTimeout(alertTimer);island.classList.remove('alert');hit(S.expanded);charState('');};
 $('#alertAgain').onclick=()=>{clearTimeout(alertTimer);if(alertAgainFn)alertAgainFn();island.classList.remove('alert');hit(S.expanded);};
+
+/* ---------- звонки Discord и сообщения Telegram на свёрнутом острове ----------
+   Источник — системные уведомления Windows (notif.ps1). Показываем ТОЛЬКО если на острове сейчас нет текста песни:
+   пока играет музыка и строки песни идут на острове, звонки и сообщения не выводятся. */
+function lyricsOnIsland(){
+  return S.pillLy!==false&&!!NP.has&&!!NP.playing&&!!LY.synced&&LY.key===NP.key&&LY.lines.length>0&&!lyLocked();
+}
+const CALL_RX=/(incoming\s+(voice\s+|video\s+)?call|is\s+calling|calling\s+you|входящ[а-яё]*\s+(голосов[а-яё]*\s+|видео[а-яё]*\s+)?(звонок|вызов)|звонит|вызывает|звонок\s+от)/i;
+function nfEndCall(){
+  clearInterval(NF.ring);clearTimeout(NF.tmo);NF.ring=null;NF.tmo=null;
+  if(!NF.call)return;
+  NF.call=null;island.classList.remove('call','alert');hit(S.expanded);
+}
+function nfShowCall(n){
+  if(NF.call||S.expanded)return;   /* остров раскрыт — пользователь и так за компьютером: звонок видно в самом Discord */
+  const t=String(n.title||'').trim(),b=String(n.body||'').trim();
+  const name=CALL_RX.test(t)?b:t;
+  NF.call={id:n.id,at:Date.now()};
+  $('#callName').textContent=name||'Discord';
+  $('#callSub').textContent='Входящий звонок Discord';
+  clearTimeout(alertTimer);
+  island.classList.remove('expanded');island.classList.add('alert','call');S.expanded=false;
+  if(API&&API.active)API.active(false);
+  Sound.play('alert');
+  NF.ring=setInterval(()=>Sound.play('alert'),2000);
+  NF.tmo=setTimeout(nfEndCall,30000);
+}
+function nfHandle(n){
+  if(!n||S.nfOn===false)return;
+  if(lyricsOnIsland())return;
+  if(n.kind==='discord'){
+    if(CALL_RX.test(String(n.title||'')+' '+String(n.body||'')))nfShowCall(n);
+    return;
+  }
+  if(n.kind==='telegram'){
+    if(NF.call)return;
+    showAlert('✈️',String(n.title||'Telegram').slice(0,60),String(n.body||'').slice(0,140),()=>{if(API)API.open('tg://');},'Открыть');
+  }
+}
+async function nfPoll(){
+  if(NF.busy||!API||!API.notifPoll||S.nfOn===false)return;
+  NF.busy=true;
+  try{
+    const r=await API.notifPoll();
+    if(r){
+      NF.st=r.st||'';NF.err=r.err||'';
+      if(r.st==='allowed'){
+        (r.gone||[]).forEach(id=>{if(NF.call&&NF.call.id===id)nfEndCall();});
+        (r.new||[]).forEach(nfHandle);
+      }
+      renderNfInfo();
+    }
+  }catch(e){}
+  NF.busy=false;
+}
+function nfLoop(){
+  NF.loop=true;
+  nfPoll().then(()=>{
+    if(S.nfOn===false){NF.loop=false;return;}
+    setTimeout(nfLoop,NF.st==='allowed'?1200:20000);   /* без доступа к уведомлениям опрашиваем редко */
+  });
+}
+function nfKick(){if(!NF.loop)nfLoop();}
+function renderNfInfo(){
+  const el=$('#nfInfo');if(!el)return;
+  if(S.nfOn===false||!API){el.textContent='';return;}
+  const m={allowed:'Доступ к уведомлениям Windows есть.',denied:'Windows не даёт доступ к уведомлениям: Параметры → Конфиденциальность → Уведомления → разреши Nexora.',unsupported:'Эта версия Windows не поддерживает чтение уведомлений.',error:'Не удалось прочитать уведомления'+(NF.err?': '+NF.err:'.')};
+  el.textContent=NF.st?(m[NF.st]||''):'Проверяю доступ к уведомлениям…';
+}
+$('#callAccept').onclick=async e=>{
+  e.stopPropagation();nfEndCall();
+  const ok=API&&API.notifDiscord?await API.notifDiscord('accept'):false;
+  if(!ok)toast('Не получилось принять звонок: ответь в самом Discord');
+};
+$('#callDecline').onclick=async e=>{
+  e.stopPropagation();nfEndCall();
+  const ok=API&&API.notifDiscord?await API.notifDiscord('decline'):false;
+  if(!ok)toast('Не получилось сбросить звонок: сбрось в самом Discord');
+};
 
 /* ---------- прочее ---------- */
 function renderSound(){
@@ -3539,7 +3694,7 @@ setInterval(()=>{if(performance.now()-last>2500)loop(performance.now());},1500);
 
 
 /* ---------- обход блокировок (zapret: Discord · YouTube) + Telegram-прокси ---------- */
-S.bp=Object.assign({on:false,strat:'',auto:true,last:0,tgOn:false},S.bp||{});
+S.bp=Object.assign({on:false,strat:'',auto:true,last:0,tgOn:false,autoRun:false},S.bp||{});
 const BP={busy:false,info:null,msg:''};
 function bpParseBat(text,dir){
   /* из .bat Flowseal берём аргументы winws.exe: склеиваем строки с ^, подставляем %BIN% и %LISTS% */
@@ -3563,6 +3718,7 @@ const bpName=n=>String(n||'').replace(/\.bat$/i,'');
 function renderBp(){
   const sw=$('#swBp');if(!sw)return;
   sw.classList.toggle('on',!!S.bp.on);
+  $('#swBpAuto').classList.toggle('on',!!S.bp.autoRun);
   const sel=$('#bpStrat'),list=(BP.info&&BP.info.strategies)||[];
   if(sel.dataset.sig!==list.join('|')){
     sel.innerHTML=list.length?list.map(n=>`<option value="${esc(n)}">${esc(bpName(n))}</option>`).join(''):'<option value="">Набор zapret ещё не скачан</option>';
@@ -3634,6 +3790,10 @@ $('#swBp').onclick=()=>{
     toast(tgErr?('Обход включён: '+bpName(st)+'. Telegram-прокси: '+tgErr):('Обход включён: '+bpName(st)));
   });
 };
+$('#swBpAuto').onclick=()=>{
+  S.bp.autoRun=!S.bp.autoRun;save();renderBp();
+  toast(S.bp.autoRun?'Обход и Telegram-прокси будут запускаться вместе с Nexora':'Автозапуск обхода выключен');
+};
 $('#bpStrat').onchange=e=>{
   S.bp.strat=e.target.value;save();
   if(S.bp.on)bpGuard(async()=>{BP.msg='Переключаю…';renderBp();await bpStartNow(S.bp.strat);BP.msg='';});
@@ -3684,6 +3844,13 @@ async function appUpdRun(){
   }finally{APPUPD.busy=false;btn.disabled=false;}
 }
 $('#appUpd').onclick=appUpdRun;
+$('#appUninstall').onclick=async()=>{
+  if(!API||!API.uninstall)return toast('Работает только в приложении');
+  if(!confirm('Удалить Nexora с этого компьютера?\n\nПриложение закроется, обход блокировок и автозапуск будут отключены, после этого откроется программа удаления.'))return;
+  try{await flushAll();}catch(e){}
+  const r=await API.uninstall();
+  if(!r||!r.ok)toast((r&&r.err)||'Не удалось запустить удаление');
+};
 appUpdVersion();
 $('#bpPick').onclick=()=>{
   if(!API||!API.bpStart)return toast('Работает только в приложении');
@@ -3714,8 +3881,10 @@ async function bpBoot(){
       save();BP.info=await API.bpInfo();
     }catch(e){}
   }
-  if(S.bp.on)await bpGuard(async()=>{await bpStartNow();S.bp.on=true;});
-  if(S.bp.tgOn){try{await tgStartNow();}catch(e){S.bp.tgOn=false;save();}}
+  /* «Запускать вместе с Nexora»: поднимаем обход и Telegram-прокси, даже если перед выходом они были выключены */
+  const wantZ=S.bp.on||S.bp.autoRun,wantTg=S.bp.tgOn||S.bp.autoRun;
+  if(wantZ)await bpGuard(async()=>{await bpStartNow();S.bp.on=true;});
+  if(wantTg&&API.tgStart){try{await tgStartNow();}catch(e){S.bp.tgOn=false;save();if(S.bp.autoRun)toast('Telegram-прокси не запустился: '+((e&&e.message)||e));}}
   renderBp();
 }
 renderBp();
@@ -3734,6 +3903,8 @@ if(API){
   API.onShot(startShot);
   API.autostartGet().then(v=>$('#swAutostart').classList.toggle('on',v));
   bpBoot();
+  notesHydrate();
+  if(S.nfOn!==false)setTimeout(nfKick,4000);
   if(S.tg.token)tg('getMe').then(me=>{S.tg.me=me;startTG();}).catch(()=>{});
 }
 </script>
